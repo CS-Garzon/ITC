@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Payroll</title>
+    <style>
+        /* General styles */
+        body {
+            text-decoration: none;
+            background-image: url(STREAM.png);
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat; 
+            margin: 0;
+            height: 100%;
+            font-family: Arial, sans-serif;
+        }
+
+        /* Header styles */
+        .header-container {
+            font-family: "Poppins", sans-serif; 
+            font-weight: 700;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 3px 3px 10px #22154f;
+            width: 100%;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            padding: 20px 30px;
+            background-color: #FFFFFF;
+            box-sizing: border-box;
+        }
+
+        .header-left-logo {
+            text-decoration: none;
+        }
+
+        .header-right-menus {
+            display: flex;
+            gap: 20px;
+        }
+
+        .header-right-menus a {
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        /* Page title styles */
+        .title-container {
+            padding: 35px 20px;
+            text-align: center;
+            margin: 40px 0;
+            color: #ff9d46;
+            text-shadow: 4px 4px 6px #22154f82, -4px -4px 6px #22154f82;
+        }
+
+        .title-container h1 {
+            font-size: 5em;
+            margin: 0 0 -10px;
+        }
+
+        .title-container p {
+            font-size: 1.5em;
+        }
+
+        /* Grid container styles */
+        .grid-container {
+            overflow: visible;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            width: clamp(200px, 60%vw, 1200px);
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .grid-item {
+            background-color: rgba(255, 255, 255, 0.212);
+            text-align: center;
+            padding: 20px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            border: 2px solid white;
+        }
+
+        .grid-item input {
+            width: 80%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .grid-item button {
+            padding: 10px 20px;
+            margin-top: 10px;
+            font-size: 1em;
+            color: white;
+            background-color: #ff9d46;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .grid-item button:hover {
+            background-color: #e0852d;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-content button {
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header-container">
+        <div class="header-left-logo">
+            <a href="index.html">Simple Payroll</a>
+        </div>
+        <nav class="header-right-menus">
+            <a href="1_Conversion.html">Temperature & Length</a>
+            <a href="2_TaxCalcu.html">Tax Calculator</a>
+            <a href="3_NaturalNumbers.html">Natural Numbers</a>
+            <a href="index.html">Home</a>
+        </nav>
+    </header>
+
+    <!-- Page Title -->
+    <section class="title-container">
+        <h1>Simple Payroll</h1>
+        <p>Generate a payroll list with add and delete functions.</p>
+    </section>
+
+    <!-- Main Content -->
+    <main class="grid-container">
+        <!-- Payroll Form -->
+        <section class="grid-item">
+            <h2>Payroll Form</h2>
+            <label for="emname">Employee Name:</label>
+            <input id="emname" type="text" placeholder="Enter Employee Name">
+
+            <label for="days">Days Worked:</label>
+            <input id="days" type="number" placeholder="Enter Days Worked">
+
+            <label for="rate">Daily Rate:</label>
+            <input id="rate" type="number" placeholder="Enter Daily Rate">
+
+            <label for="less">Deduction Amount:</label>
+            <input id="less" type="number" placeholder="Enter Deductions">
+
+            <button id="addtotable">Add to Table</button>
+            <button id="clearinput">Clear Input</button>
+        </section>
+
+        <!-- Payroll Table -->
+        <section id="table" class="grid-item">
+            <h2>Payroll Table</h2>
+            <p>The payroll table will appear here after adding entries.</p>
+        </section>
+    </main>
+
+    <!-- Delete Modal -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content">
+            <h3>Delete Employee</h3>
+            <p>Enter the line number to delete:</p>
+            <input type="number" id="deleteLineNum" placeholder="Line Number" min="1">
+            <button onclick="confirmDelete()">Confirm</button>
+            <button onclick="closeModal()">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        const payrollTable = [];
+
+        const clearInputFields = () => {
+            document.querySelectorAll('.grid-item input').forEach(input => input.value = '');
+            document.getElementById('emname').focus();
+        };
+
+        const displayTable = () => {
+            const tableContainer = document.getElementById("table");
+            if (!payrollTable.length) {
+                tableContainer.innerHTML = "<p>No entries in the payroll table.</p>";
+                return;
+            }
+
+            let tableHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>No.</th>
+                            <th>Employee Name</th>
+                            <th>Days Worked</th>
+                            <th>Daily Rate</th>
+                            <th>Gross Pay</th>
+                            <th>Deductions</th>
+                            <th>Net Pay</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            payrollTable.forEach((entry, index) => {
+                tableHTML += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${entry.emname}</td>
+                        <td>${entry.days}</td>
+                        <td>${entry.rate.toFixed(2)}</td>
+                        <td>${(entry.days * entry.rate).toFixed(2)}</td>
+                        <td>${entry.less.toFixed(2)}</td>
+                        <td>${(entry.days * entry.rate - entry.less).toFixed(2)}</td>
+                    </tr>
+                `;
+            });
+
+            tableHTML += `</tbody></table>`;
+            tableContainer.innerHTML = tableHTML;
+        };
+
+        const openDeleteModal = () => {
+            document.getElementById('deleteModal').style.display = 'flex';
+        };
+
+        const closeModal = () => {
+            document.getElementById('deleteModal').style.display = 'none';
+        };
+
+        const confirmDelete = () => {
+            const lineNum = document.getElementById('deleteLineNum').value;
+            const num = parseInt(lineNum);
+
+            if (isNaN(num) || num < 1 || num > payrollTable.length) {
+                alert('Invalid line number');
+                return;
+            }
+
+            payrollTable.splice(num - 1, 1);
+            displayTable();
+            closeModal();
+        };
+
+        document.getElementById('addtotable').addEventListener('click', () => {
+            const emname = document.getElementById('emname').value.trim();
+            const days = parseInt(document.getElementById('days').value, 10);
+            const rate = parseFloat(document.getElementById('rate').value);
+            const less = parseFloat(document.getElementById('less').value) || 0;
+
+            if (!emname || days <= 0 || rate <= 0) {
+                alert('Please provide valid inputs for Employee Name, Days Worked, and Daily Rate.');
+                return;
+            }
+
+            payrollTable.push({ emname, days, rate, less });
+            displayTable();
+            clearInputFields();
+        });
+    </script>
+</body>
+</html>
